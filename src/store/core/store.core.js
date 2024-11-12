@@ -1,4 +1,4 @@
-const { isEqual, isEmpty } = require("./store.utils");
+const { isEqual, isEmpty, findDependency } = require("./store.utils");
 
 const STORE_ID_KEY = 'uid';
 const KEY_SOURCE = 'key';
@@ -115,14 +115,17 @@ class StateManager {
             
             // Если различия в данных есть, то нужно уведомить всех зависимых от этих данных слушателей, о внесенных изменениях
             else {
-                for (const key of mergedKeys) {
-                    // Если значения перекрывающихся ключей разные, то уведомляем слушателя, связанного с этим ключем
-                    // Если нет, то пропускаем итерацию, чтобы лишний раз не триггерить другие слушатели, которые связаны с этими же данными
-                    if (!isEqual(snapshotOwn[key], newState[key])) {
-                        this.notify(key);
-                    }
-                    else continue;
-                }
+                // const changedDataKeys = [];
+                // for (const key of mergedKeys) {
+                //     // Если значения перекрывающихся ключей разные, то уведомляем слушателя, связанного с этим ключем
+                //     // Если нет, то пропускаем итерацию, чтобы лишний раз не триггерить другие слушатели, которые связаны с этими же данными
+                //     if (!isEqual(snapshotOwn[key], newState[key])) {
+                //         changedDataKeys.push(key);
+                //     }
+                //     else continue;
+                // }
+                // Запускаем уведомления для пачки определенных ключей, который по факту были изменены
+                this.notify(mergedKeys);
             }
             return void 0;
         } catch (err) {
@@ -178,6 +181,7 @@ class StateManager {
                 if (!Object.hasOwn(this.state, target)) throw new Error(`[StateManager.subscribe] Модель "${target}" отсутствует в хранилище`);
                 // Добавляется в таблицу имя текущей модели наблюдения и соответствующий ей обработчик 
                 if (listener) {
+                    // Если для такой модели еще не был назначен ни один обработчик
                     if (!this.listenerMap[target]) {
                         this.listenerMap[target] = [listener];
                     }
@@ -259,14 +263,20 @@ class StateManager {
  
         // Если аргумент keys передан не был, то оповещаются все слушатели
         if (!keys) state = this.getState();
-        else state = this.getState(keys);
-        for (const key of Object.keys(this.listenerMap)) {
-            if (Array.isArray(this.listenerMap[key])) {
-                for (const listener of this.listenerMap[key]) {
-                    listener(state);
-                }
-            }
+        else {
+            // Поиск всех ключей данных, которые связаны между собой общими обработчикам с ключами в keys
+            const linkedKeys = findDependency(this.listenerMap, keys);
+            console.log(linkedKeys);
+            
+            state = this.getState(linkedKeys);
         }
+        // Собираем массив обработчиков и убираем дубликаты, чтобы исключить повторного вызова обработчиков
+        const listeners = [...new Set(Object.values(this.listenerMap).flat(1))];
+        // Вызываем все прослушиватели
+        console.log(keys);
+        listeners.forEach((listener) => {
+            listener(state);
+        });
         return void 0;
     }
 

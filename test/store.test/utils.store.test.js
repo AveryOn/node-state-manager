@@ -1,5 +1,5 @@
 const { StateManager, normalizeUid, createProxyInner, KEY_SOURCE, STORE_ID_KEY } = require("../../src/store/core/store.core");
-const { isEqual, isEmpty } = require("../../src/store/core/store.utils");
+const { isEqual, isEmpty, findDependency } = require("../../src/store/core/store.utils");
 
 
 test('[StateManager][Utils]:: normalizeUid', () => {
@@ -126,4 +126,41 @@ test('[StateManager][Utils]:: isEmpty', () => {
     const result9 = false;
     expect(isEmpty({ text: 'abc' })).toBe(result9);
 
+})
+
+// findDependency
+test('[StateManager][Utils]:: findDependency', () => {
+
+    const fn1 = () => { };
+    const fn2 = () => { };
+    const fn3 = () => { };
+    const fn4 = () => { };
+    const fn5 = () => { };
+    const data = {
+        "key_1": [fn1, fn4],
+        "key_2": [fn2, fn4, fn5],
+        "key_3": [fn1, fn5],
+        "key_4": [fn2],
+        "key_5": [fn3],
+    }
+
+    // Равняемся на ключ который имеет 3 совпадающих перекрытия по методам
+    const result1 = ["key_1", "key_2", "key_3"];
+    expect(findDependency(data, ["key_1"])).toEqual(result1);
+
+    // Аналогичный
+    const result1_1 = ["key_1", "key_2", "key_3", "key_4"];
+    expect(findDependency(data, ["key_3", "key_4"])).toEqual(result1_1);
+
+    // Равняемся на ключ который не имеет совпадений
+    const result2 = ["key_5"];
+    expect(findDependency(data, ["key_5"])).toEqual(result2);
+
+    // Ничего не передаем на вход
+    const result3 = '[findDependency] аргумент structure не установленного типа';
+    expect(() => findDependency()).toThrow(result3);
+
+    // Передаем на вход первый аргумент. Второй не передаем 
+    const result4 = '[findDependency] аргумент pivotKeys должен быть массивом';
+    expect(() => findDependency(data)).toThrow(result4);
 })

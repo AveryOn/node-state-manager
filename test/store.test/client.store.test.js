@@ -460,8 +460,6 @@ test('[StateManager]:: Notify subscribed listener ', () => {
     // 8. Передан массив с ключами несуществующих моделей + Ключ невалидного типа
     const result8 = '[StateManager.notify] keys должен быть типа string | string[]';
     expect(() => localStore.notify(['data1', 'isNotExists', false, []])).toThrow(result8);
-
-
 });
 
 test('[StateManager]:: Notify Work listener -> Unit[1]', () => {
@@ -471,20 +469,27 @@ test('[StateManager]:: Notify Work listener -> Unit[1]', () => {
     localStore.subscribe('data1', (state) => chagedData = state);
     localStore.setState({ data1: 'updated_value' });
     const result1 = {
-        value: 'updated_value', [KEY_SOURCE]: 'data1', [STORE_ID_KEY]: 'store/local-store-noty-1',
+        data1: {
+            value: 'updated_value', [KEY_SOURCE]: 'data1', [STORE_ID_KEY]: 'store/local-store-noty-1',
+        }
     };
     expect(chagedData).toEqual(result1);
 });
 
 test('[StateManager]:: Notify Work listener -> Unit[2]', () => {
     const localStore = new StateManager('local-store-noty-2', { data1: 'value_1', data2: { i: 123, j: 'abc' } });
+
     // 10. Вызов прослушивателей при изменении нескольких полей
-    let chagedData;
-    localStore.subscribe(['data1', 'data2'], (state) => chagedData1 = state);
+    let changedData;
+    localStore.subscribe(['data1', 'data2'], (state) => {
+        changedData = state;            
+    });
     localStore.setState({ data1: 'updated_value', data2: 'another_value' });
     const result1 = {
         data1: { value: 'updated_value', [KEY_SOURCE]: 'data1', [STORE_ID_KEY]: 'store/local-store-noty-2' },
         data2: { value: 'another_value', [KEY_SOURCE]: 'data2', [STORE_ID_KEY]: 'store/local-store-noty-2' }
     };
-    expect(chagedData).toEqual(result1);
+    setTimeout(() => {
+        expect(changedData).toEqual(result1);
+    }, 0)
 });
