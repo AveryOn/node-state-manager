@@ -1,0 +1,13 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": "js,json",
+    "ignore": [
+        "node_modules",
+        "data.json"
+    ],
+    "exec": "node src/index.js",
+    "delay": "1000",
+    "verbose": false
+}
