@@ -47,7 +47,6 @@ const configProxyState: ProxyHandler<object> = {
         else return false;
     },
     apply: function (target: any, thisArg: any, argumentsList: any) {
-        console.log(`Вызов функции с аргументами: ${argumentsList}`);
         return target.apply(thisArg, argumentsList);
     },
 }
