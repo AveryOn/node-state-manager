@@ -352,18 +352,3 @@ export {
     normalizeUid,
     createProxyInner,
 }
-
-
-const exampleStore = new StateManager<{
-    hello: string | number
-}>('example-store', {
-    hello: 'world'
-})
-exampleStore.setState({ hello: 123 })
-exampleStore.getState(['hello'])
-
-
-
-
-exampleStore.subscribe('hello', () => {})
-exampleStore.subscribe('hello', () => {})
