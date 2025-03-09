@@ -2,12 +2,12 @@
     "watch": [
         "src"
     ],
-    "ext": "js,json",
+    "ext": "js,json,ts",
     "ignore": [
         "node_modules",
         "data.json"
     ],
-    "exec": "node src/index.js",
+    "exec": "ts-node src/index.ts",
     "delay": "1000",
     "verbose": false
 }

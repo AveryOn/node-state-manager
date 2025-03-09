@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test-clean": "jest --clearCache",
     "dev": "nodemon",
     "start": "node src/index.js"
   },
@@ -13,9 +14,14 @@
   "description": "",
   "dependencies": {
     "chalk": "^5.3.0",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.10",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6"
   }
 }

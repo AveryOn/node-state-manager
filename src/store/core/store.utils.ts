@@ -1,6 +1,7 @@
+import { Listener } from "../../@types/store.types";
 
 // Проверка равенства данных между собой
-function isEqual(data1, data2) {
+function isEqual(data1: any, data2: any) {
     // Проверка на NaN
     if ((data1 !== data1) && (data2 !== data2)) return true;
     // Проверка на null;
@@ -16,7 +17,7 @@ function isEqual(data1, data2) {
 
 
 // Проеряет существование ключей объекта
-function isEmpty(obj) {
+function isEmpty<T extends Record<string, any>>(obj: T) {
     if (!obj) return true;
     if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
         for (const key in obj) {
@@ -30,15 +31,15 @@ function isEmpty(obj) {
 /* 
     Приходит структура данных вида:
     {
-        [key1: string]: Array<(args: any[]) => any>,
-        [key2: string]: Array<(args: any[]) => any>,
-        [key3: string]: Array<(args: any[]) => any>,
+        [key1: string]: Listener[],
+        [key2: string]: Listener[],
+        [key3: string]: Listener[],
     }
-    Нужно найти ключи, которые имеют общие (перекрывающиеся) функции-обработчики
+    Нужно найти ключи, которые имеют общих (перекрывающиеся) слушателей
     В качестве опорных ключей от которых нужно отталкиваться для поиска приходит 
-    аргумент pivotKeys - массив строк-ключей
+    аргумент pivotKeys - массив ключей модлей
 */
-function findDependency(structure, pivotKeys) {
+function findDependency<T>(structure: Partial<Record<keyof T, Listener<T>[]>>, pivotKeys: keyof T[]) {
     if (!structure && typeof structure !== 'object' && structure !== null) {
         throw TypeError('[findDependency] аргумент structure не установленного типа');
     }
@@ -48,20 +49,20 @@ function findDependency(structure, pivotKeys) {
     try {
         // На основе опорных ключей собираем массив методов которые имеют эти ключи
         // Также убираются дубликаты, чтобы избежать лишних итераций
-        const sourceMethods = [...new Set(pivotKeys
+        const sourceMethods: Listener<T>[] = [...new Set(pivotKeys
             .map((key) => {
-                return structure[key];
+                return (structure as Record<string, Listener<T>[]>)[key];
             })
             .flat(1)
         )];
         console.log(sourceMethods);
         // Сбор ключей, которые перекрываются по одинаковым методам
-        const mergedKeys = new Set();
+        const mergedKeys = new Set<keyof T>();
         for (const [key, methods] of Object.entries(structure)) {
             if (methods && Array.isArray(methods)) {
                 sourceMethods.forEach((sourceMethod) => {
                     if (methods.includes(sourceMethod)) {
-                        mergedKeys.add(key)
+                        mergedKeys.add(key as keyof T)
                     }
                 });
             }
@@ -73,7 +74,7 @@ function findDependency(structure, pivotKeys) {
 
 }
 
-module.exports = {
+export {
     isEqual,
     isEmpty,
     findDependency,

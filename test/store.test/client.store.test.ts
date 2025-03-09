@@ -1,4 +1,5 @@
-const { StateManager, KEY_SOURCE, STORE_ID_KEY } = require("../../src/store/core/store.core");
+// @ts-nocheck
+import { StateManager, KEY_SOURCE, STORE_ID_KEY } from '../../src/store/core/store.core';
 
 const testStore = new StateManager('test', {
     typeBool: false,

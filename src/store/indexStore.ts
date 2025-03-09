@@ -1,4 +1,4 @@
-const { StateManager } = require("./core/store.core");
+import { StateManager } from "./core/store.core";
 
 const indexState = new StateManager('index', {
     processData: {},
@@ -7,6 +7,6 @@ const indexState = new StateManager('index', {
     names: [],
 });
 
-module.exports = {
+export {
     indexState,
 }

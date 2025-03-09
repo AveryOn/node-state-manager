@@ -1,5 +1,7 @@
-const { StateManager, normalizeUid, createProxyInner, KEY_SOURCE, STORE_ID_KEY } = require("../../src/store/core/store.core");
-const { isEqual, isEmpty, findDependency } = require("../../src/store/core/store.utils");
+// @ts-nocheck
+import { StateManager, normalizeUid, createProxyInner, KEY_SOURCE, STORE_ID_KEY } from "../../src/store/core/store.core";
+import { isEqual, isEmpty, findDependency } from "../../src/store/core/store.utils";
+
 
 
 test('[StateManager][Utils]:: normalizeUid', () => {
