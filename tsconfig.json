@@ -6,11 +6,11 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "./dist",
+        "outDir": "dist",
         "lib": ["es2022"],
         "declaration": true,
         "declarationMap": true,
-        "emitDeclarationOnly": true,
+        "emitDeclarationOnly": false,
     },
     "include": [
         "src/**/*.ts"
