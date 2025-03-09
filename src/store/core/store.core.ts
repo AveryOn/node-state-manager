@@ -201,7 +201,7 @@ class StateManager<T extends Record<string, any>> {
     }
 
     // Подписаться на обновления модели
-    subscribe(target: keyof T, listener: Listener<T>) {
+    subscribe(target: keyof T | (keyof T)[], listener: Listener<T>) {
         try {
             if (!StateManager.instances[this.uid!]) 
                 return void console.error(`Хранилище ${this.uid} не доступно`);

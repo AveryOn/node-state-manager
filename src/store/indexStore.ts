@@ -4,7 +4,7 @@ const indexState = new StateManager('index', {
     processData: {},
     check: false,
     cash: null,
-    names: [],
+    names: [] as any[],
 });
 
 export {
