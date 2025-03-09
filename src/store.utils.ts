@@ -56,6 +56,7 @@ function findDependency<T>(structure: Partial<Record<keyof T, Listener<T>[]>>, p
             })
             .flat(1)
         )];
+        
         // Сбор ключей, которые перекрываются по одинаковым методам
         const mergedKeys = new Set<keyof T>();
         for (const [key, methods] of Object.entries(structure)) {

@@ -1,4 +1,4 @@
-import { Listener, ChunkStateData } from './@types/store.types';
+import { Listener, ChunkStateData, StateItemRef } from './@types/store.types';
 import { isEqual, isEmpty, findDependency } from './store.utils'
 
 const STORE_ID_KEY = 'uid';
@@ -11,6 +11,12 @@ const confReturnedProxyKey = {
     },
     set: function (target: any, prop: string, value: any, receiver: any) {
         target[prop] = value;
+        const stateUid: string = target?.uid;
+        if(stateUid && typeof stateUid === 'string') {
+            const ins = StateManager.instances[stateUid];
+            ins.setState({ [target?.key]: value })
+        }
+        
         // Обновление зависимости в хранилище
         if (!StateManager.instances[target[STORE_ID_KEY]]) {
             console.error(`Хранилище ${target[STORE_ID_KEY]} не доступно`);
@@ -21,6 +27,9 @@ const confReturnedProxyKey = {
     },
 }
 
+/**
+ * Прокси ловушка для всего экземпляра стейта
+ */
 const configProxyState: ProxyHandler<object> = {
     get: function (target: any, prop: any, receiver: any) {
         if (prop in target) {
@@ -60,7 +69,9 @@ function normalizeUid(uid: string) {
 
 }
 
-// Создает Proxy обертку над элементом стора
+/**
+ * Создает Proxy обертку над определенной моделью стейта
+ */
 function createProxyInner<T extends Record<any, any>>(this: StateManager<T>, key: string) {
     if(!this.state) {
         throw new Error('Хранилище не инициализировано');
@@ -157,9 +168,11 @@ class StateManager<T extends Record<string, any>> {
     }
 
     // Получить данные стейта
-    getState(request: Array<keyof T> | undefined = undefined): ChunkStateData<T> | undefined {
+    getState<K extends keyof T>(request: K): StateItemRef<T>[K];
+    getState(request?: Array<keyof T> | undefined): StateItemRef<T>;
+    getState(request: keyof T | Array<keyof T> | undefined = undefined) {
         if (!StateManager.instances[this.uid!]) 
-            return void console.error(`Хранилище ${this.uid} не доступно`);
+            throw new Error(`Хранилище ${this.uid} не доступно`)
         if(!this.state)
             throw new Error('Хранилище не инициализировано');
         if(
@@ -172,7 +185,7 @@ class StateManager<T extends Record<string, any>> {
         if (request) {
             // Если request - массив ключей объекта state
             if (Array.isArray(request) && request.length > 0) {
-                return request.reduce((acc: ChunkStateData<T>, key: keyof T) => {
+                return request.reduce((acc: StateItemRef<T>, key: keyof T) => {
                     if(typeof key !== 'string') {
                         throw TypeError('[StateManager.getState] параметр request должен быть типа string[] | string | undefined');
                     }
@@ -181,22 +194,25 @@ class StateManager<T extends Record<string, any>> {
                         (acc as any)[key] = createProxyInner.apply(this, [key]);
                     }
                     return acc;
-                }, {});
+                }, {} as StateItemRef<T>);
             }
             // Если request - строка с ключем который нужно получить
-            else if (request && typeof request === 'string') {
+            else if (typeof request === 'string') {
                 if(Object.hasOwn(this.state, request)) {
                     return createProxyInner.apply(this, [request]);
                 } 
-                else return void 0; 
+                throw new Error(`Модели с ключом ${request} не существует`);
+            }
+            else {
+                throw new Error('Имя ключа не допустимого формата');
             }
         }
         // Если аргуенты не были переданы получаем все данные стора
         else {
-            return Object.keys(this.state).reduce((acc: ChunkStateData<T>, key: string) => {
+            return Object.keys(this.state).reduce((acc: StateItemRef<T>, key: string) => {
                 (acc as any)[key] = createProxyInner.apply(this, [key]);
                 return acc;
-            }, {});
+            }, {} as StateItemRef<T>);
         }
     }
 
@@ -308,11 +324,10 @@ class StateManager<T extends Record<string, any>> {
         // Если аргумент keys передан не был, то оповещаются все слушатели
         if (!keys) state = this.getState();
         else {
+            // Преобразуем keys в массив, если это один строковый ключ, т.к findDependency ждет массива строк
+            keys = Array.isArray(keys) ? keys : [keys]
             // Поиск всех ключей данных, которые связаны между собой общими обработчикам с ключами в keys
-            const linkedKeys = findDependency(this.listenerMap!, keys as keyof T[]);
-            console.log(linkedKeys);
-
-            
+            const linkedKeys = findDependency(this.listenerMap!, (keys as unknown) as keyof T[]);
             state = this.getState(linkedKeys);
         }
         // Собираем массив обработчиков и убираем дубликаты, чтобы исключить повторного вызова обработчиков
@@ -321,7 +336,6 @@ class StateManager<T extends Record<string, any>> {
             listeners = [...new Set(Object.values(this.listenerMap).filter(Boolean).flat(1) as Listener<T>[])];
         }
         // Вызываем все прослушиватели
-        console.log(keys);
         listeners.forEach((listener) => {
             listener(state!);
         });
