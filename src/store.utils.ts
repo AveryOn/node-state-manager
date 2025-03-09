@@ -1,4 +1,5 @@
-import { Listener } from "../../@types/store.types";
+import { Listener } from "./@types/store.types";
+
 
 // Проверка равенства данных между собой
 function isEqual(data1: any, data2: any) {

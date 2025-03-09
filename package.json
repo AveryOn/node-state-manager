@@ -1,13 +1,19 @@
 {
-  "name": "base-hints",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "node-state-manager",
+  "version": "1.0.1",
+  "main": "index.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
     "test-clean": "jest --clearCache",
     "dev": "nodemon",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -1,4 +1,4 @@
-import { Listener, ChunkStateData } from '../../@types/store.types';
+import { Listener, ChunkStateData } from './@types/store.types';
 import { isEqual, isEmpty, findDependency } from './store.utils'
 
 const STORE_ID_KEY = 'uid';
