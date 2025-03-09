@@ -9,6 +9,8 @@
     "dev": "nodemon",
     "start": "node src/index.js",
     "build": "tsc",
+    "vup": "npm version patch",
+    "pub": "npm publish",
     "prepublishOnly": "npm run build"
   },
   "files": [
