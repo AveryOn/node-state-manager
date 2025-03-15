@@ -321,25 +321,38 @@ class StateManager<T extends Record<string, any>> {
         if(isNotExists.length > 0) 
             throw new Error(`[StateManager.notify] моделей с ключами: "${isNotExists.join('", "')}" не существует` );
  
+        let linkedKeys: (keyof T)[] = []
         // Если аргумент keys передан не был, то оповещаются все слушатели
         if (!keys) state = this.getState();
         else {
             // Преобразуем keys в массив, если это один строковый ключ, т.к findDependency ждет массива строк
             keys = Array.isArray(keys) ? keys : [keys]
             // Поиск всех ключей данных, которые связаны между собой общими обработчикам с ключами в keys
-            const linkedKeys = findDependency(this.listenerMap!, (keys as unknown) as keyof T[]);
-            state = this.getState(linkedKeys);
+            linkedKeys = findDependency(this.listenerMap!, (keys as unknown) as keyof T[]);
+            state = this.getState(
+                linkedKeys.length 
+                ? linkedKeys 
+                : undefined
+            );
         }
         // Собираем массив обработчиков и убираем дубликаты, чтобы исключить повторного вызова обработчиков
-        let listeners: Array<Listener<T>> = []
+        let listeners: Set<Listener<T>> = new Set()
         if(this.listenerMap) {
-            listeners = [...new Set(Object.values(this.listenerMap).filter(Boolean).flat(1) as Listener<T>[])];
+            for (const [key, funcs] of Object.entries(this.listenerMap)) {
+                if(keys && keys.includes(key) && funcs) {
+                    funcs.forEach((listener) => {
+                        if(listener) {
+                            listeners.add(listener)
+                        }
+                    })
+                }
+            }
         }
         // Вызываем все прослушиватели
         listeners.forEach((listener) => {
             listener(state!);
         });
-        return void 0;
+        return undefined;
     }
 
     // Сбросить все слушатели
