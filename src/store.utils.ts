@@ -1,4 +1,4 @@
-import { Listener } from "./@types/store.types";
+import { Listener, ListenerMapValue } from "./@types/store.types";
 
 
 // Проверка равенства данных между собой
@@ -32,15 +32,15 @@ function isEmpty<T extends Record<string, any>>(obj: T) {
 /* 
     Приходит структура данных вида:
     {
-        [key1: string]: Listener[],
-        [key2: string]: Listener[],
-        [key3: string]: Listener[],
+        [key1: string]: ListenerMapValue[],
+        [key2: string]: ListenerMapValue[],
+        [key3: string]: ListenerMapValue[],
     }
     Нужно найти ключи, которые имеют общих (перекрывающиеся) слушателей
     В качестве опорных ключей от которых нужно отталкиваться для поиска приходит 
     аргумент pivotKeys - массив ключей модлей
 */
-function findDependency<T>(structure: Partial<Record<keyof T, Listener<T>[]>>, pivotKeys: keyof T[]) {
+function findDependency<T>(structure: Partial<Record<keyof T, (ListenerMapValue<T>)[]>>, pivotKeys: keyof T[]) {
     if (!structure && typeof structure !== 'object' && structure !== null) {
         throw TypeError('[findDependency] аргумент structure не установленного типа');
     }
@@ -52,7 +52,9 @@ function findDependency<T>(structure: Partial<Record<keyof T, Listener<T>[]>>, p
         // Также убираются дубликаты, чтобы избежать лишних итераций
         const sourceMethods: Listener<T>[] = [...new Set(pivotKeys
             .map((key) => {
-                return (structure as Record<string, Listener<T>[]>)[key];
+                return (structure as Record<string, (ListenerMapValue<T>)[]>)[key]?.map((item) => {
+                    return item.listener
+                });
             })
             .flat(1)
         )];

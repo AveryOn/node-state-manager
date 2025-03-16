@@ -1,4 +1,4 @@
-import { Listener, ChunkStateData, StateItemRef } from './@types/store.types';
+import { Listener, ChunkStateData, StateItemRef, SubscribeConfig, ListenerMap, ListenerMapValue, ListenerFields } from './@types/store.types';
 import { isEqual, isEmpty, findDependency } from './store.utils'
 
 const STORE_ID_KEY = 'uid';
@@ -97,7 +97,7 @@ function createProxyInner<T extends Record<any, any>>(this: StateManager<T>, key
  */
 class StateManager<T extends Record<string, any>> {
     static instances: { [key: string]: StateManager<any> } = {};
-    listenerMap: Partial<Record<keyof T, Listener<T>[]>> | null = null;
+    listenerMap: ListenerMap<T> | null = null;
     uid: string | null = null;
     state: T | null = null;
     constructor(uid: string, state: T) {
@@ -217,7 +217,7 @@ class StateManager<T extends Record<string, any>> {
     }
 
     // Подписаться на обновления модели
-    subscribe(target: keyof T | (keyof T)[], listener: Listener<T>) {
+    subscribe(target: keyof T | (keyof T)[], listener: Listener<T>, config?: SubscribeConfig<T>) {
         try {
             if (!StateManager.instances[this.uid!]) 
                 return void console.error(`Хранилище ${this.uid} не доступно`);
@@ -237,14 +237,23 @@ class StateManager<T extends Record<string, any>> {
                 if (listener) {
                     // Если для такой модели еще не был назначен ни один обработчик
                     if (!this.listenerMap![target] || typeof this.listenerMap![target] === 'undefined') {
-                        (this.listenerMap as Record<string, Listener<T>[]>)[target] = [listener];
+                        (this.listenerMap as Record<string, (ListenerMapValue<T>)[]>)[target] = [{
+                            fields: config?.fetch ?? null,
+                            listener: listener,
+                        }]
                     }
                     else {
-                        if (!this.listenerMap![target].includes(listener)) {
-                            this.listenerMap![target].push(listener)
+                        if (!this.listenerMap![target].find((value) =>{
+                            return value.listener === listener
+                        })) {
+                            this.listenerMap![target].push({
+                                fields: config?.fetch ?? null,
+                                listener: listener,
+                            })
                         }
                     }
                     return 1;
+
                 }
                 else return 0;
             }
@@ -270,12 +279,20 @@ class StateManager<T extends Record<string, any>> {
                     которые будут вызываться всякий раз, когда модель изменяется             */
                     if (listener) {
                         if (this.listenerMap![key]) {
-                            if (!this.listenerMap![key].includes(listener)) {
-                                this.listenerMap![key].push(listener);
+                            if (!this.listenerMap![key].find((value) =>{
+                                return value.listener === listener
+                            })) {
+                                this.listenerMap![key].push({
+                                    fields: config?.fetch ?? null,
+                                    listener: listener,
+                                });
                             }
                             else continue;
                         } else {
-                            (this.listenerMap as Record<string, Listener<T>[]>)[key] = [listener];
+                            (this.listenerMap as Record<string, (ListenerMapValue<T>)[]>)[key] = [{
+                                fields: config?.fetch ?? null,
+                                listener: listener,
+                            }]
                         }
                     }
                 }
@@ -284,8 +301,10 @@ class StateManager<T extends Record<string, any>> {
                 if (notExistsKeys.length > 0) {
                     throw new Error(`[StateManager.subscribe] Модели состояния с ключами "${notExistsKeys.join('", "')}" не существуют`);
                 }
+                
                 return 1;
             }
+
             // Если traget не установленного типа
             else {
                 throw new Error(`[StateManager.subscribe] Аргумент target должен быть типа string | string[]`);
@@ -306,7 +325,7 @@ class StateManager<T extends Record<string, any>> {
             throw TypeError('[StateManager.notify] keys должен быть типа string | string[]');
         }
         let state;
-        const isNotExists: string[] = [];
+        const isNotExists: (keyof T)[] = [];
         // Доп проверка на то, является ли каждый переданный key массива валидной строкой и определяет ли он существующую модель
         // Проверка применяется только в том случае, есди переданный keys это список моделей а не одна модель
         Array.isArray(keys) && keys.forEach((key) => {
@@ -336,21 +355,49 @@ class StateManager<T extends Record<string, any>> {
             );
         }
         // Собираем массив обработчиков и убираем дубликаты, чтобы исключить повторного вызова обработчиков
-        let listeners: Set<Listener<T>> = new Set()
+        let listeners: Set<ListenerMapValue<T>> = new Set()
         if(this.listenerMap) {
-            for (const [key, funcs] of Object.entries(this.listenerMap)) {
-                if(keys && keys.includes(key) && funcs) {
-                    funcs.forEach((listener) => {
-                        if(listener) {
-                            listeners.add(listener)
+            for (const [key, value] of Object.entries(this.listenerMap)) {
+                if(keys && keys.includes(key) && value) {
+                    value.forEach((item) => {
+                        if(item) {
+                            listeners.add({
+                                fields: item.fields,
+                                listener: item.listener
+                            })
                         }
                     })
                 }
             }
         }
         // Вызываем все прослушиватели
-        listeners.forEach((listener) => {
-            listener(state!);
+        listeners.forEach((item) => {
+            let fields = item.fields
+            if(fields === null) {
+                const data = this.getState(keys as (keyof T)[])
+                return void item.listener(data);
+            }
+            else if(fields === '*') {
+                const data = this.getState()
+                return void item.listener(data)
+            }
+            else if(typeof fields === 'string' && Object.hasOwn(this.state!, fields)) {
+                const data = this.getState(fields)
+                return void item.listener(data as StateItemRef<T>)
+            }
+            else if(Array.isArray(fields)) {
+                const fixFields = fields.map((field) => {
+                    if(!Object.hasOwn(this.state!, field)) {
+                        isNotExists.push(field)
+                        return undefined
+                    }
+                    else {
+                        return field
+                    }
+                }).filter(Boolean)
+                const fixState = this.getState(fixFields as (keyof T)[])
+                return void item.listener(fixState)
+            }
         });
         return undefined;
     }
