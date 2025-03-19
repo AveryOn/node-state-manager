@@ -346,6 +346,7 @@ class StateManager<T extends Record<string, any>> {
         else {
             // Преобразуем keys в массив, если это один строковый ключ, т.к findDependency ждет массива строк
             keys = Array.isArray(keys) ? keys : [keys]
+            
             // Поиск всех ключей данных, которые связаны между собой общими обработчикам с ключами в keys
             linkedKeys = findDependency(this.listenerMap!, (keys as unknown) as keyof T[]);
             state = this.getState(
@@ -355,35 +356,33 @@ class StateManager<T extends Record<string, any>> {
             );
         }
         // Собираем массив обработчиков и убираем дубликаты, чтобы исключить повторного вызова обработчиков
-        let listeners: Set<ListenerMapValue<T>> = new Set()
+        let listeners: Map<Listener<T>, ListenerFields<T>> = new Map()
+        let TEST_LISTENERS: any[] = []
         if(this.listenerMap) {
             for (const [key, value] of Object.entries(this.listenerMap)) {
                 if(keys && keys.includes(key) && value) {
                     value.forEach((item) => {
                         if(item) {
-                            listeners.add({
-                                fields: item.fields,
-                                listener: item.listener
-                            })
+                            TEST_LISTENERS.push(item.listener)
+                            listeners.set(item.listener, item.fields)
                         }
                     })
                 }
             }
         }
         // Вызываем все прослушиватели
-        listeners.forEach((item) => {
-            let fields = item.fields
+        listeners.forEach((fields, listener) => {
             if(fields === null) {
                 const data = this.getState(keys as (keyof T)[])
-                return void item.listener(data);
+                return void listener(data);
             }
             else if(fields === '*') {
                 const data = this.getState()
-                return void item.listener(data)
+                return void listener(data)
             }
             else if(typeof fields === 'string' && Object.hasOwn(this.state!, fields)) {
                 const data = this.getState(fields)
-                return void item.listener(data as StateItemRef<T>)
+                return void listener(data as StateItemRef<T>)
             }
             else if(Array.isArray(fields)) {
                 const fixFields = fields.map((field) => {
@@ -396,7 +395,7 @@ class StateManager<T extends Record<string, any>> {
                     }
                 }).filter(Boolean)
                 const fixState = this.getState(fixFields as (keyof T)[])
-                return void item.listener(fixState)
+                return void listener(fixState)
             }
         });
         return undefined;

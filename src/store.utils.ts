@@ -64,7 +64,7 @@ function findDependency<T>(structure: Partial<Record<keyof T, (ListenerMapValue<
         for (const [key, methods] of Object.entries(structure)) {
             if (methods && Array.isArray(methods)) {
                 sourceMethods.forEach((sourceMethod) => {
-                    if (methods.includes(sourceMethod)) {
+                    if (methods.find((value) => value?.listener === sourceMethod)) {
                         mergedKeys.add(key as keyof T)
                     }
                 });
