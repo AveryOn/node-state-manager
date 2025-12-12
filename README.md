@@ -8,4 +8,6 @@ Lightweight and convenient state manager.
 ```sh
 npm install node-state-manager
 ```
+---
 
+> TODO: Написать адекватную документацию 
