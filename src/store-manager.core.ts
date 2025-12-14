@@ -6,8 +6,8 @@ import {
   ListenerMap,
   ListenerMapValue,
   ListenerFields,
-} from './@types/store.types';
-import { isEqual, isEmpty, findDependency } from './store.utils';
+} from '~/@types/store.types';
+import { isEqual, isEmpty, findDependency, normalizeUid } from '~/store.utils';
 
 const STORE_ID_KEY = 'uid';
 const KEY_SOURCE = 'key';
@@ -65,14 +65,6 @@ const configProxyState: ProxyHandler<object> = {
     return target.apply(thisArg, argumentsList);
   },
 };
-
-// Форматирование Uid экземпляра стора для его хранения в хэше instances
-function normalizeUid(uid: string) {
-  if (uid) return `store/${uid}`;
-  else {
-    return `store/${Date.now()}`;
-  }
-}
 
 /**
  * Создает Proxy обертку над определенной моделью стейта

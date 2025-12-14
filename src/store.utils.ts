@@ -1,4 +1,4 @@
-import { Listener, ListenerMapValue } from './@types/store.types';
+import { Listener, ListenerMapValue } from '~/@types/store.types';
 
 // Проверка равенства данных между собой
 function isEqual(data1: any, data2: any) {
@@ -78,3 +78,11 @@ function findDependency<T>(structure: Partial<Record<keyof T, ListenerMapValue<T
 }
 
 export { isEqual, isEmpty, findDependency };
+
+/** Форматирование Uid экземпляра стора для его хранения в хэше instances */
+export function normalizeUid(uid: string) {
+  if (uid) return `store/${uid}`;
+  else {
+    return `store/${Date.now()}`;
+  }
+}

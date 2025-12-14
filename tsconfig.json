@@ -11,6 +11,12 @@
         "declaration": true,
         "declarationMap": true,
         "emitDeclarationOnly": false,
+        "baseUrl": ".",
+        "paths": {
+          "~/*": ["src/*"],
+        //   "~core/*": ["src/core/*"],
+        //   "~utils/*": ["src/utils/*"]
+        }
     },
     "include": [
         "src/**/*.ts"
