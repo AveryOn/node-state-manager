@@ -110,58 +110,53 @@ class StateManager<T extends Record<string, any>> {
 
   // Установить состояние
   setState(newState: ChunkStateData<T>) {
-    try {
-      if (this.uid && !StateManager.instances[this.uid]) return void console.error(`Хранилище ${this.uid} не доступно`);
+    if (this.uid && !StateManager.instances[this.uid]) return void console.error(`Хранилище ${this.uid} не доступно`);
 
-      if (!this.state) throw new Error('Хранилище не инициализировано');
+    if (!this.state) throw new Error('Хранилище не инициализировано');
 
-      if (typeof newState === 'undefined')
-        throw ReferenceError('[StateManager.setState] newState обязательный аргумент');
-      if (newState === null || typeof newState !== 'object' || Array.isArray(newState)) {
-        throw new TypeError('[StateManager.setState] аргумент newState должен быть типа "object"');
-      }
-      // Если объект newState пустой, то выходим из функции
-      if (isEmpty(newState)) return undefined;
-      // Делаем снимок тех ключей параметра newState, которые есть в фактическом this.state
-      // Для того чтобы сравнить есть ли изменения в передаваемых данных
-      let newLen = 0;
-      let rootLen = 0;
-      const mergedKeys: string[] = []; // Перекрывающиеся ключи newState и this.state
-      const snapshotOwn = Object.keys(newState).reduce((acc: { [key: string]: any }, key) => {
-        newLen++;
-        if (Object.hasOwn(this.state!, key)) {
-          rootLen++;
-          mergedKeys.push(key);
-          acc[key] = this.state![key];
-        }
-        // На месте вносим новые изменения в исходный state
-        (this.state as Record<string, any>)[key] = newState[key];
-        return acc;
-      }, {});
-      // если исходные и новые данные равны, то игнорируем дальнейшие действия,
-      // т.к это считается ложным вызовом. (newLen !== rootLen - Помогает избежать лишнего вызова isEqual если данные отличаются на кол-во ключей, т.к итак понятно, что данные уже не равны)
-      if (newLen === rootLen && isEqual(snapshotOwn, newState)) {
-        return void 0;
-      }
-
-      // Если различия в данных есть, то нужно уведомить всех зависимых от этих данных слушателей, о внесенных изменениях
-      else {
-        // const changedDataKeys = [];
-        // for (const key of mergedKeys) {
-        //     // Если значения перекрывающихся ключей разные, то уведомляем слушателя, связанного с этим ключом
-        //     // Если нет, то пропускаем итерацию, чтобы лишний раз не триггерить другие слушатели, которые связаны с этими же данными
-        //     if (!isEqual(snapshotOwn[key], newState[key])) {
-        //         changedDataKeys.push(key);
-        //     }
-        //     else continue;
-        // }
-        // Запускаем уведомления для пачки определенных ключей, который по факту были изменены
-        this.notify(mergedKeys);
-      }
-      return void 0;
-    } catch (err) {
-      throw err;
+    if (typeof newState === 'undefined') throw ReferenceError('[StateManager.setState] newState обязательный аргумент');
+    if (newState === null || typeof newState !== 'object' || Array.isArray(newState)) {
+      throw new TypeError('[StateManager.setState] аргумент newState должен быть типа "object"');
     }
+    // Если объект newState пустой, то выходим из функции
+    if (isEmpty(newState)) return undefined;
+    // Делаем снимок тех ключей параметра newState, которые есть в фактическом this.state
+    // Для того чтобы сравнить есть ли изменения в передаваемых данных
+    let newLen = 0;
+    let rootLen = 0;
+    const mergedKeys: string[] = []; // Перекрывающиеся ключи newState и this.state
+    const snapshotOwn = Object.keys(newState).reduce((acc: { [key: string]: any }, key) => {
+      newLen++;
+      if (Object.hasOwn(this.state!, key)) {
+        rootLen++;
+        mergedKeys.push(key);
+        acc[key] = this.state![key];
+      }
+      // На месте вносим новые изменения в исходный state
+      (this.state as Record<string, any>)[key] = newState[key];
+      return acc;
+    }, {});
+    // если исходные и новые данные равны, то игнорируем дальнейшие действия,
+    // т.к это считается ложным вызовом. (newLen !== rootLen - Помогает избежать лишнего вызова isEqual если данные отличаются на кол-во ключей, т.к итак понятно, что данные уже не равны)
+    if (newLen === rootLen && isEqual(snapshotOwn, newState)) {
+      return void 0;
+    }
+
+    // Если различия в данных есть, то нужно уведомить всех зависимых от этих данных слушателей, о внесенных изменениях
+    else {
+      // const changedDataKeys = [];
+      // for (const key of mergedKeys) {
+      //     // Если значения перекрывающихся ключей разные, то уведомляем слушателя, связанного с этим ключом
+      //     // Если нет, то пропускаем итерацию, чтобы лишний раз не триггерить другие слушатели, которые связаны с этими же данными
+      //     if (!isEqual(snapshotOwn[key], newState[key])) {
+      //         changedDataKeys.push(key);
+      //     }
+      //     else continue;
+      // }
+      // Запускаем уведомления для пачки определенных ключей, который по факту были изменены
+      this.notify(mergedKeys);
+    }
+    return void 0;
   }
 
   // Получить данные стейта
@@ -208,105 +203,101 @@ class StateManager<T extends Record<string, any>> {
 
   // Подписаться на обновления модели
   subscribe(target: keyof T | (keyof T)[], listener: Listener<T>, config?: SubscribeConfig<T>) {
-    try {
-      if (!StateManager.instances[this.uid!]) return void console.error(`Хранилище ${this.uid} не доступно`);
-      if (!this.state) throw new Error('Хранилище не инициализировано');
+    if (!StateManager.instances[this.uid!]) return void console.error(`Хранилище ${this.uid} не доступно`);
+    if (!this.state) throw new Error('Хранилище не инициализировано');
 
-      if (!target && (typeof target === 'undefined' || typeof target === 'string'))
-        throw new Error('[StateManager.subscribe] target - обязательный аргумент');
+    if (!target && (typeof target === 'undefined' || typeof target === 'string'))
+      throw new Error('[StateManager.subscribe] target - обязательный аргумент');
 
-      // В случае если цель отслеживания одна
-      if (typeof target === 'string' && target.length > 0) {
+    // В случае если цель отслеживания одна
+    if (typeof target === 'string' && target.length > 0) {
+      // Если модель с таким именем не существует
+      if (!Object.hasOwn(this.state, target))
+        throw new Error(`[StateManager.subscribe] Модель "${target}" отсутствует в хранилище`);
+
+      // Добавляется в таблицу имя текущей модели наблюдения и соответствующий ей обработчик
+      if (listener) {
+        // Если для такой модели еще не был назначен ни один обработчик
+        if (!this.listenerMap![target] || typeof this.listenerMap![target] === 'undefined') {
+          (this.listenerMap as Record<string, ListenerMapValue<T>[]>)[target] = [
+            {
+              fields: config?.fetch ?? null,
+              listener: listener,
+            },
+          ];
+        } else {
+          if (
+            !this.listenerMap![target].find((value) => {
+              return value.listener === listener;
+            })
+          ) {
+            this.listenerMap![target].push({
+              fields: config?.fetch ?? null,
+              listener: listener,
+            });
+          }
+        }
+        return 1;
+      } else return 0;
+    }
+    // В случае если целей для отслеживания больше чем 1
+    else if (Array.isArray(target) && target.length > 0) {
+      const notExistsKeys: string[] = [];
+
+      for (let i = 0; i < target.length; i++) {
+        const key: keyof T = target[i];
+        // Если хотябы один из ключей не является валидной строкой то выдает ошибку
+        if (!key || typeof key !== 'string') {
+          throw new Error(`[StateManager.subscribe] Аргумент target должен быть типа string | string[]`);
+        }
         // Если модель с таким именем не существует
-        if (!Object.hasOwn(this.state, target))
-          throw new Error(`[StateManager.subscribe] Модель "${target}" отсутствует в хранилище`);
-
-        // Добавляется в таблицу имя текущей модели наблюдения и соответствующий ей обработчик
+        if (!Object.hasOwn(this.state, key)) {
+          notExistsKeys.push(key);
+          continue;
+        }
+        // Если по такому ключу уже существует обработчик, то пока ничего не делаем
+        if (typeof this.listenerMap![key] === 'function') {
+        }
+        /* Если все "Если" прошли успешно, то устанавливаем связь "ключ: значение", 
+                    где "ключ" - это строковое представление модели состояния, а "значение" - это массив обработчиков, 
+                    которые будут вызываться всякий раз, когда модель изменяется             */
         if (listener) {
-          // Если для такой модели еще не был назначен ни один обработчик
-          if (!this.listenerMap![target] || typeof this.listenerMap![target] === 'undefined') {
-            (this.listenerMap as Record<string, ListenerMapValue<T>[]>)[target] = [
-              {
-                fields: config?.fetch ?? null,
-                listener: listener,
-              },
-            ];
-          } else {
+          if (this.listenerMap![key]) {
             if (
-              !this.listenerMap![target].find((value) => {
+              !this.listenerMap![key].find((value) => {
                 return value.listener === listener;
               })
             ) {
-              this.listenerMap![target].push({
+              this.listenerMap![key].push({
                 fields: config?.fetch ?? null,
                 listener: listener,
               });
-            }
-          }
-          return 1;
-        } else return 0;
-      }
-      // В случае если целей для отслеживания больше чем 1
-      else if (Array.isArray(target) && target.length > 0) {
-        const notExistsKeys: string[] = [];
+            } else continue;
+          } else {
+            (this.listenerMap as Record<string, ListenerMapValue<T>[]>)[key] = [
+              {
+                fields: config?.fetch ?? null,
 
-        for (let i = 0; i < target.length; i++) {
-          const key: keyof T = target[i];
-          // Если хотябы один из ключей не является валидной строкой то выдает ошибку
-          if (!key || typeof key !== 'string') {
-            throw new Error(`[StateManager.subscribe] Аргумент target должен быть типа string | string[]`);
-          }
-          // Если модель с таким именем не существует
-          if (!Object.hasOwn(this.state, key)) {
-            notExistsKeys.push(key);
-            continue;
-          }
-          // Если по такому ключу уже существует обработчик, то пока ничего не делаем
-          if (typeof this.listenerMap![key] === 'function') {
-          }
-          /* Если все "Если" прошли успешно, то устанавливаем связь "ключ: значение", 
-                    где "ключ" - это строковое представление модели состояния, а "значение" - это массив обработчиков, 
-                    которые будут вызываться всякий раз, когда модель изменяется             */
-          if (listener) {
-            if (this.listenerMap![key]) {
-              if (
-                !this.listenerMap![key].find((value) => {
-                  return value.listener === listener;
-                })
-              ) {
-                this.listenerMap![key].push({
-                  fields: config?.fetch ?? null,
-                  listener: listener,
-                });
-              } else continue;
-            } else {
-              (this.listenerMap as Record<string, ListenerMapValue<T>[]>)[key] = [
-                {
-                  fields: config?.fetch ?? null,
-
-                  listener: listener,
-                },
-              ];
-            }
+                listener: listener,
+              },
+            ];
           }
         }
-        /* Если за время прохода по списку ключей был обнаржуен хотябы один ключ 
+      }
+      /* Если за время прохода по списку ключей был обнаржуен хотябы один ключ 
                     который не соответствует существующей модели, то выдает ошибку           */
-        if (notExistsKeys.length > 0) {
-          throw new Error(
-            `[StateManager.subscribe] Модели состояния с ключами "${notExistsKeys.join('", "')}" не существуют`,
-          );
-        }
-
-        return 1;
+      if (notExistsKeys.length > 0) {
+        throw new Error(
+          `[StateManager.subscribe] Модели состояния с ключами "${notExistsKeys.join('", "')}" не существуют`,
+        );
       }
 
-      // Если traget не установленного типа
-      else {
-        throw new Error(`[StateManager.subscribe] Аргумент target должен быть типа string | string[]`);
-      }
-    } catch (err) {
-      throw err;
+      return 1;
+    }
+
+    // Если traget не установленного типа
+    else {
+      throw new Error(`[StateManager.subscribe] Аргумент target должен быть типа string | string[]`);
     }
   }
 

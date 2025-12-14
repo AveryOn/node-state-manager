@@ -10,7 +10,7 @@ function isEqual(data1: any, data2: any) {
   if (data1 === data2) return true;
   // Проерка сложных данных
   if (typeof data1 === 'object') {
-    return JSON.stringify(data1) === JSON.stringify(data2);
+    return JSON.stringify(data1) === JSON.stringify(data2); // TODO - FIX
   }
   return false;
 }
@@ -45,36 +45,32 @@ function findDependency<T>(structure: Partial<Record<keyof T, ListenerMapValue<T
   if (!pivotKeys || !Array.isArray(pivotKeys)) {
     throw TypeError('[findDependency] аргумент pivotKeys должен быть массивом');
   }
-  try {
-    // На основе опорных ключей собираем массив методов которые имеют эти ключи
-    // Также убираются дубликаты, чтобы избежать лишних итераций
-    const sourceMethods: Listener<T>[] = [
-      ...new Set(
-        pivotKeys
-          .map((key) => {
-            return (structure as Record<string, ListenerMapValue<T>[]>)[key]?.map((item) => {
-              return item.listener;
-            });
-          })
-          .flat(1),
-      ),
-    ];
+  // На основе опорных ключей собираем массив методов которые имеют эти ключи
+  // Также убираются дубликаты, чтобы избежать лишних итераций
+  const sourceMethods: Listener<T>[] = [
+    ...new Set(
+      pivotKeys
+        .map((key) => {
+          return (structure as Record<string, ListenerMapValue<T>[]>)[key]?.map((item) => {
+            return item.listener;
+          });
+        })
+        .flat(1),
+    ),
+  ];
 
-    // Сбор ключей, которые перекрываются по одинаковым методам
-    const mergedKeys = new Set<keyof T>();
-    for (const [key, methods] of Object.entries(structure)) {
-      if (methods && Array.isArray(methods)) {
-        sourceMethods.forEach((sourceMethod) => {
-          if (methods.find((value) => value?.listener === sourceMethod)) {
-            mergedKeys.add(key as keyof T);
-          }
-        });
-      }
+  // Сбор ключей, которые перекрываются по одинаковым методам
+  const mergedKeys = new Set<keyof T>();
+  for (const [key, methods] of Object.entries(structure)) {
+    if (methods && Array.isArray(methods)) {
+      sourceMethods.forEach((sourceMethod) => {
+        if (methods.find((value) => value?.listener === sourceMethod)) {
+          mergedKeys.add(key as keyof T);
+        }
+      });
     }
-    return [...mergedKeys];
-  } catch (err) {
-    throw err;
   }
+  return [...mergedKeys];
 }
 
 export { isEqual, isEmpty, findDependency };
