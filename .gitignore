@@ -5,6 +5,7 @@ Thumbs.db
 # Node.js зависимости
 /node_modules
 /.pnp
+*/draft
 .pnp.js
 
 # Лог-файлы
