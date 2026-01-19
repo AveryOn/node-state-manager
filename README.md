@@ -1,13 +1,21 @@
+## Node State Manager
 
-# State Manager
+### Description
+Lightweight reactive state manager for Node.js.
+State changes are tracked via ES6 Proxy and propagated to subscribers through listeners.
 
-Lightweight and convenient state manager.
+### Scope
+- Reactive state container
+- Listener-based reactivity model
+- Subscriptions to state field changes
+- Callback execution on state updates
 
-## Установка
+### Tech
+- Node.js
+- TypeScript
+- ES6 Proxy
+- Jest (unit tests)
 
-```sh
-npm install node-state-manager
-```
----
-
-> TODO: Написать адекватную документацию 
+### Notes
+- npm package
+- Listener-based reactivity implementation
